@@ -1,0 +1,16 @@
+PODS:
+  - ContextObserver (0.1.0)
+
+DEPENDENCIES:
+  - ContextObserver (from `../`)
+
+EXTERNAL SOURCES:
+  ContextObserver:
+    :path: "../"
+
+SPEC CHECKSUMS:
+  ContextObserver: bd456e9078e402de9c57e88553743a9c00f2a935
+
+PODFILE CHECKSUM: c4759a940161aa1d7ebe07312875f20b3b51feb3
+
+COCOAPODS: 1.5.3

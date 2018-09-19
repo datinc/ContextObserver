@@ -1,0 +1,22 @@
+{
+  "name": "ContextObserver",
+  "version": "0.1.0",
+  "summary": "A short description of ContextObserver.",
+  "description": "TODO: Add long description of the pod here.",
+  "homepage": "https://github.com/datinc/ContextObserver",
+  "license": {
+    "type": "MIT",
+    "file": "LICENSE"
+  },
+  "authors": {
+    "datinc": "peter@datinc.ca"
+  },
+  "source": {
+    "git": "https://github.com/datinc/ContextObserver.git",
+    "tag": "0.1.0"
+  },
+  "platforms": {
+    "ios": "8.0"
+  },
+  "source_files": "ContextObserver/Classes/**/*"
+}

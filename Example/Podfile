@@ -1,0 +1,11 @@
+use_frameworks!
+
+target 'ContextObserver_Example' do
+  pod 'ContextObserver', :path => '../'
+
+  target 'ContextObserver_Tests' do
+    inherit! :search_paths
+
+    
+  end
+end
