@@ -99,14 +99,15 @@ public class ContextObserver: NSObject {
 
 extension ContextObserver {
     
-    public typealias ObjectCallbackBlock = ((observer: NSObject, object: NSManagedObject, changes: [String: Changed], state: State)) -> ()
+    public typealias ObjectCallbackBlock<O: NSObject, T: NSManagedObject> = ((observer: O, object: T, changes: [String: Changed], state: State)) -> ()
+    private typealias BaseObjectCallbackBlock = ObjectCallbackBlock<NSObject, NSManagedObject>
     
     private class ObjectAction {
         weak var observer: NSObject?
         let id: NSManagedObjectID
         let state: State
-        let block: ObjectCallbackBlock
-        init(_ observer: NSObject, _ id: NSManagedObjectID, _ state: State, _ block: @escaping ObjectCallbackBlock) {
+        let block: BaseObjectCallbackBlock
+        init(_ observer: NSObject, _ id: NSManagedObjectID, _ state: State, _ block: @escaping BaseObjectCallbackBlock) {
             self.observer = observer
             self.id = id
             self.state = state
@@ -128,27 +129,19 @@ extension ContextObserver {
         return changes
     }
     
-    public func add(observer: NSObject, for id: NSManagedObjectID, state: State = .all, _ block: @escaping ObjectCallbackBlock) {
-        let action = ObjectAction(observer, id, state, block)
+    public func add<O: NSObject, T: NSManagedObject>(_ type: T.Type, observer: O, for id: NSManagedObjectID, state: State = .all, _ block: @escaping ObjectCallbackBlock<O, T>) {
+        let action = ObjectAction(observer, id, state) { result in
+            let object = result.object as! T
+            let observer = result.observer as! O
+            block((observer, object, result.changes, result.state))
+        }
         var list = objectActions[id] ?? []
         list.append(action)
         objectActions[id] = list
     }
     
-    public func add<O: NSObject, T: NSManagedObject>(_ type: T.Type, observer: O, for id: NSManagedObjectID, state: State = .all, _ block: @escaping ((observer: O, object: T, changes: [String: Changed], state: State)) -> ()) {
-        return add(observer: observer, for: id, state: state) { result in
-            let object = result.object as! T
-            let observer = result.observer as! O
-            block((observer, object, result.changes, result.state))
-        }
-    }
-    
-    public func add<O: NSObject, T: NSManagedObject>(observer: O, for object: T, state: State = .all, _ block: @escaping ((observer: O, object: T, changes: [String: Changed], state: State)) -> ()) {
-        return add(observer: observer, for: object.objectID, state: state) { result in
-            let object = result.object as! T
-            let observer = result.observer as! O
-            block((observer, object, result.changes, result.state))
-        }
+    public func add<O: NSObject, T: NSManagedObject>(observer: O, for object: T, state: State = .all, _ block: @escaping ObjectCallbackBlock<O, T>) {
+        add(T.self, observer: observer, for: object.objectID, block)
     }
     
     private func remove(objectAction observer: NSObject?, for id: NSManagedObjectID) {
