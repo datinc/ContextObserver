@@ -42,7 +42,7 @@ class ContextObserverKeypathTests: XCTestCase {
         }
         
         let exp = expectation(description: "Wait for change")
-        var change: ContextObserver.Changed?
+        var change: ContextObserver.ValueChanged<String>?
         
         observer.add(observer: self, for: id, keyPath: \Entity0.stringValue) { (update) in
             change = update.change
@@ -58,7 +58,7 @@ class ContextObserverKeypathTests: XCTestCase {
         waitForExpectations(timeout: 1.0)
         
         if let change = change {
-            XCTAssertEqual(change.new as? String, "Test")
+            XCTAssertEqual(change.new, "Test")
             XCTAssertNil(change.old)
         } else {
             XCTFail("never changed")
@@ -83,7 +83,7 @@ class ContextObserverKeypathTests: XCTestCase {
         }
         
         let exp = expectation(description: "Wait for change")
-        var change: ContextObserver.Changed?
+        var change: ContextObserver.ValueChanged<String>?
         
         observer.add(observer: self, for: id1, keyPath: \Entity1.parent?.stringValue) { (update) in
             change = update.change
@@ -99,7 +99,7 @@ class ContextObserverKeypathTests: XCTestCase {
         waitForExpectations(timeout: 1.0)
         
         if let change = change {
-            XCTAssertEqual(change.new as? String, "Test")
+            XCTAssertEqual(change.new, "Test")
             XCTAssertNil(change.old)
             let entity1 = bgContext.object(with: id1) as! Entity1
             XCTAssertEqual(entity1.parent?.stringValue, "Test")
