@@ -17,6 +17,8 @@
 		D1E14F132152C2600024AF4E /* ContextObserverObjectTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E14F122152C2600024AF4E /* ContextObserverObjectTests.swift */; };
 		D1E14F152152C4DB0024AF4E /* TestDB.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = D1E14F0F2152C1010024AF4E /* TestDB.xcdatamodeld */; };
 		D1E14F1921553D920024AF4E /* ContextObserverKeypathTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E14F1821553D920024AF4E /* ContextObserverKeypathTests.swift */; };
+		D1E14F1E215566EA0024AF4E /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = D1E14F1C215566EA0024AF4E /* LICENSE */; };
+		D1E14F1F215566EA0024AF4E /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = D1E14F1D215566EA0024AF4E /* README.md */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -48,6 +50,8 @@
 		D1E14F102152C1010024AF4E /* TestDB.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = TestDB.xcdatamodel; sourceTree = "<group>"; };
 		D1E14F122152C2600024AF4E /* ContextObserverObjectTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextObserverObjectTests.swift; sourceTree = "<group>"; };
 		D1E14F1821553D920024AF4E /* ContextObserverKeypathTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextObserverKeypathTests.swift; sourceTree = "<group>"; };
+		D1E14F1C215566EA0024AF4E /* LICENSE */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = LICENSE; path = ../../LICENSE; sourceTree = "<group>"; };
+		D1E14F1D215566EA0024AF4E /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = ../../README.md; sourceTree = "<group>"; };
 		DE95851F7A03B66B5CEFA537 /* Pods_ContextObserver_Tests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_ContextObserver_Tests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		E151A65E00939693B9E786A9 /* Pods-ContextObserver_Tests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ContextObserver_Tests.release.xcconfig"; path = "Pods/Target Support Files/Pods-ContextObserver_Tests/Pods-ContextObserver_Tests.release.xcconfig"; sourceTree = "<group>"; };
 		F1C7701FB4A690228A7E6F34 /* Pods_ContextObserver_Example.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_ContextObserver_Example.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -151,6 +155,8 @@
 			isa = PBXGroup;
 			children = (
 				607FACEA1AFB9204008FA782 /* Info.plist */,
+				D1E14F1C215566EA0024AF4E /* LICENSE */,
+				D1E14F1D215566EA0024AF4E /* README.md */,
 			);
 			name = "Supporting Files";
 			sourceTree = "<group>";
@@ -253,6 +259,8 @@
 			files = (
 				607FACDB1AFB9204008FA782 /* Main.storyboard in Resources */,
 				607FACE01AFB9204008FA782 /* LaunchScreen.xib in Resources */,
+				D1E14F1F215566EA0024AF4E /* README.md in Resources */,
+				D1E14F1E215566EA0024AF4E /* LICENSE in Resources */,
 				607FACDD1AFB9204008FA782 /* Images.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

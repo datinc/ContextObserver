@@ -250,6 +250,10 @@ extension ContextObserver {
         }
     }
     
+    public func add<O: NSObject, T: NSManagedObject, V>(observer: O, for object: T, keyPath: KeyPath<T, V>, _ block: @escaping KeypathCallbackBlock<O, T>) {
+        add(observer: observer, for: object.objectID, keyPath: keyPath, block)
+    }
+    
     public func add<O: NSObject, T: NSManagedObject, V>(observer: O, for id: NSManagedObjectID, keyPath: KeyPath<T, V>, _ block: @escaping KeypathCallbackBlock<O, T>) {
         let keyPathStr = NSExpression(forKeyPath: keyPath).keyPath
         add(T.self, observer: observer, for: id, keyPath: keyPathStr, block)
