@@ -135,15 +135,59 @@ class ContextObserverObjectTests: XCTestCase {
             id1 = entity1.objectID
         }
         
-        waitForExpectations(timeout: 100.0)
+        waitForExpectations(timeout: 1.0)
         
         let old = change.old as! Set<NSManagedObjectID>
         let new = change.new as! Set<NSManagedObjectID>
         
         XCTAssertEqual(old.count, 0)
         XCTAssertEqual(new.count, 1)
-        print(new.first!, id1!)
         XCTAssertTrue(new.first!.isEqual(id1))
+        
+        observer.remove(self)
+    }
+    
+    func testRemoveChildObject() {
+        let bgContext = container.newBackgroundContext()
+        let observer = ContextObserver(context: container.viewContext)
+        
+        var id0: NSManagedObjectID!
+        var id1: NSManagedObjectID!
+        
+        bgContext.performAndWait {
+            let entity0 = Entity0(context: bgContext)
+            let entity1 = Entity1(context: bgContext)
+            entity1.parent = entity0
+            
+            try! bgContext.save()
+            id0 = entity0.objectID
+            id1 = entity1.objectID
+        }
+        
+        let exp = expectation(description: "Wait for change")
+        var change: ContextObserver.Changed!
+        
+        observer.add(Entity0.self, observer: self, for: id0) { (update) in
+            if let found = update.changes["entity1s"] {
+                change = found
+                exp.fulfill()
+            }
+        }
+        
+        bgContext.perform {
+            let entity1 = bgContext.object(with: id1) as! Entity1
+            bgContext.delete(entity1)
+            try! bgContext.save()
+        }
+        
+        waitForExpectations(timeout: 100.0)
+        
+        let old = change.old as! Set<NSManagedObjectID>
+        let new = change.new as! Set<NSManagedObjectID>
+        
+        XCTAssertEqual(old.count, 1)
+        XCTAssertEqual(new.count, 0)
+        XCTAssertTrue(old.first!.isEqual(id1))
         
         observer.remove(self)
     }

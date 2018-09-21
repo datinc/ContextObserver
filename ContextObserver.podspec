@@ -9,7 +9,7 @@
 Pod::Spec.new do |s|
   s.name             = 'ContextObserver'
   s.version          = '0.1.0'
-  s.summary          = 'A short description of ContextObserver.'
+  s.summary          = 'ContextObserver is used to observe NSManagedObjects.'
 
 # This description is used to generate tags and improve search results.
 #   * Think: What does it do? Why did you write it? What is the focus?
@@ -18,7 +18,7 @@ Pod::Spec.new do |s|
 #   * Finally, don't worry about the indent, CocoaPods strips it!
 
   s.description      = <<-DESC
-TODO: Add long description of the pod here.
+Observe NSManagedObjects changes and key paths with ContextObserver.
                        DESC
 
   s.homepage         = 'https://github.com/datinc/ContextObserver'
