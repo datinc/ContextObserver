@@ -136,6 +136,8 @@
 			isa = PBXGroup;
 			children = (
 				607FACD41AFB9204008FA782 /* Info.plist */,
+				D1E14F1C215566EA0024AF4E /* LICENSE */,
+				D1E14F1D215566EA0024AF4E /* README.md */,
 			);
 			name = "Supporting Files";
 			sourceTree = "<group>";
@@ -155,8 +157,6 @@
 			isa = PBXGroup;
 			children = (
 				607FACEA1AFB9204008FA782 /* Info.plist */,
-				D1E14F1C215566EA0024AF4E /* LICENSE */,
-				D1E14F1D215566EA0024AF4E /* README.md */,
 			);
 			name = "Supporting Files";
 			sourceTree = "<group>";

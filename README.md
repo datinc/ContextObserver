@@ -6,9 +6,8 @@
 [![Platform](https://img.shields.io/cocoapods/p/ContextObserver.svg?style=flat)](https://cocoapods.org/pods/ContextObserver)
 
 ContextObserver is used to help observer NSManagedObjects. ContextObserver will let you observer:
-1) Any changes on an NSManagedObject
+1) Any changes on an NSManagedObject (including relationships)
 2) A keypath of an NSManagedObject
-3) A many to one relationship for an NSManagedObject (not implemented)
 
 ### Observer any changes on a NSManagedObject
 
@@ -36,14 +35,6 @@ observer.add(observer: self, for: managedObject, keyPath: someKeyPath) { (change
 ...
 observer.remove(self)
 
-```
-
-### Observer a many to one relationship for an NSManagedObject
-
-Not iimplmented yet
-
-```swift
-...
 ```
 
 ## Example

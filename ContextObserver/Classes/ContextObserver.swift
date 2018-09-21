@@ -56,20 +56,25 @@ public class ContextObserver: NSObject {
         NotificationCenter.default.addObserver(self, selector: #selector(handleContextObjectDidChange(_:)), name: NSNotification.Name.NSManagedObjectContextObjectsDidChange, object: nil)
     }
     
-    private func cleanupActions() {
-        objectActions.keys.forEach {
-            remove(objectAction: nil, for: $0)
-        }
-        keypathActions.keys.forEach {
-            remove(keyPathAction: nil, for: $0)
-        }
-    }
-    
     private func valueFor(_ value: Any?) -> Any?{
         if let child = value as? NSManagedObject {
             return child.objectID
         } else if let childSet = value as? Set<NSManagedObject> {
-            return Set<NSManagedObjectID>((childSet.map { $0.objectID }))
+            return Set<NSManagedObjectID>(childSet.map {
+                if $0.objectID.isTemporaryID {
+                    try? $0.managedObjectContext?.obtainPermanentIDs(for: [$0])
+                }
+                return $0.objectID
+            })
+        } else if let childSet = value as? NSOrderedSet, childSet.firstObject is NSManagedObject {
+            let result: [NSManagedObjectID] = childSet.map {
+                let obj = ($0 as! NSManagedObject)
+                if obj.objectID.isTemporaryID {
+                    try? obj.managedObjectContext?.obtainPermanentIDs(for: [obj])
+                }
+                return obj.objectID
+            }
+            return result
         } else if value is NSNull{
             return nil
         } else {
@@ -77,18 +82,21 @@ public class ContextObserver: NSObject {
         }
     }
     
-    public func remove(_ observer: NSObject) {
+    public func remove(_ observer: NSObject?) {
         for id in objectActions.keys {
-            remove(observer, for: id)
+            remove(objectAction: observer, for: id)
+        }
+        for id in keypathActions.keys {
+            remove(keyPathAction: observer, for: id)
         }
     }
     
-    private func remove(_ observer: NSObject, for id: NSManagedObjectID) {
+    private func remove(_ observer: NSObject?, for id: NSManagedObjectID) {
         remove(objectAction: observer, for: id)
-        remove(keyPathAction: nil, for: id)
+        remove(keyPathAction: observer, for: id)
     }
     
-    public func remove(_ observer: NSObject, for object: NSManagedObject?) {
+    public func remove(_ observer: NSObject?, for object: NSManagedObject?) {
         if let id = object?.objectID {
             remove(observer, for: id)
         } else {
@@ -133,29 +141,25 @@ public class ContextObserver: NSObject {
         let refreshedObjectsSet = notification.userInfo?[NSRefreshedObjectsKey] as? Set<NSManagedObject> ?? Set<NSManagedObject>()
         
         let allObjects = insertedObjectsSet.union(updatedObjectsSet).union(deletedObjectsSet).union(refreshedObjectsSet)
-        
-        let filterd: [(object: NSManagedObject, actions: [ObjectAction])] = allObjects.compactMap {
-            guard let action = objectActions[$0.objectID] else { return nil }
-            return ($0, action)
-        }
+   
         var updates = [Update]()
         
-        for item in filterd {
+        for object in allObjects {
             var state: State = []
-            if insertedObjectsSet.contains(item.object) {
+            if insertedObjectsSet.contains(object) {
                 state.insert(.inserted)
             }
-            if updatedObjectsSet.contains(item.object) {
+            if updatedObjectsSet.contains(object) {
                 state.insert(.updated)
             }
-            if deletedObjectsSet.contains(item.object) {
+            if deletedObjectsSet.contains(object) {
                 state.insert(.deleted)
             }
-            if refreshedObjectsSet.contains(item.object) {
+            if refreshedObjectsSet.contains(object) {
                 state.insert(.refreshed)
             }
-            let changes = changesFor(object: item.object)
-            updates.append(Update(state: state, id: item.object.objectID, changes: changes))
+            let changes = changesFor(object: object)
+            updates.append(Update(state: state, id: object.objectID, changes: changes))
         }
         
         context.perform { [weak self] in
@@ -273,9 +277,9 @@ extension ContextObserver {
                 block((observer, object, valueChange))
             }
             
-            var list = self?.keypathActions[id] ?? []
+            var list = this.keypathActions[id] ?? []
             list.append(action)
-            self?.keypathActions[id] = list
+            this.keypathActions[id] = list
         }
     }
     
@@ -329,9 +333,4 @@ extension ContextObserver {
             }
         }
     }
-}
-
-// MARK: - Relationship Observation
-
-extension ContextObserver {
 }
