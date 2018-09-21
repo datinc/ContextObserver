@@ -14,8 +14,9 @@
 		607FACDB1AFB9204008FA782 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 607FACD91AFB9204008FA782 /* Main.storyboard */; };
 		607FACDD1AFB9204008FA782 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 607FACDC1AFB9204008FA782 /* Images.xcassets */; };
 		607FACE01AFB9204008FA782 /* LaunchScreen.xib in Resources */ = {isa = PBXBuildFile; fileRef = 607FACDE1AFB9204008FA782 /* LaunchScreen.xib */; };
-		D1E14F132152C2600024AF4E /* ContextObserverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E14F122152C2600024AF4E /* ContextObserverTests.swift */; };
+		D1E14F132152C2600024AF4E /* ContextObserverObjectTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E14F122152C2600024AF4E /* ContextObserverObjectTests.swift */; };
 		D1E14F152152C4DB0024AF4E /* TestDB.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = D1E14F0F2152C1010024AF4E /* TestDB.xcdatamodeld */; };
+		D1E14F1921553D920024AF4E /* ContextObserverKeypathTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E14F1821553D920024AF4E /* ContextObserverKeypathTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -45,7 +46,8 @@
 		9EA7406456658F9272A25260 /* Pods-ContextObserver_Tests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ContextObserver_Tests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-ContextObserver_Tests/Pods-ContextObserver_Tests.debug.xcconfig"; sourceTree = "<group>"; };
 		B72F64767AFFCB4E7B8D8329 /* Pods-ContextObserver_Example.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ContextObserver_Example.release.xcconfig"; path = "Pods/Target Support Files/Pods-ContextObserver_Example/Pods-ContextObserver_Example.release.xcconfig"; sourceTree = "<group>"; };
 		D1E14F102152C1010024AF4E /* TestDB.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = TestDB.xcdatamodel; sourceTree = "<group>"; };
-		D1E14F122152C2600024AF4E /* ContextObserverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextObserverTests.swift; sourceTree = "<group>"; };
+		D1E14F122152C2600024AF4E /* ContextObserverObjectTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextObserverObjectTests.swift; sourceTree = "<group>"; };
+		D1E14F1821553D920024AF4E /* ContextObserverKeypathTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextObserverKeypathTests.swift; sourceTree = "<group>"; };
 		DE95851F7A03B66B5CEFA537 /* Pods_ContextObserver_Tests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_ContextObserver_Tests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		E151A65E00939693B9E786A9 /* Pods-ContextObserver_Tests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ContextObserver_Tests.release.xcconfig"; path = "Pods/Target Support Files/Pods-ContextObserver_Tests/Pods-ContextObserver_Tests.release.xcconfig"; sourceTree = "<group>"; };
 		F1C7701FB4A690228A7E6F34 /* Pods_ContextObserver_Example.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_ContextObserver_Example.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -138,7 +140,8 @@
 			isa = PBXGroup;
 			children = (
 				D1E14F0F2152C1010024AF4E /* TestDB.xcdatamodeld */,
-				D1E14F122152C2600024AF4E /* ContextObserverTests.swift */,
+				D1E14F122152C2600024AF4E /* ContextObserverObjectTests.swift */,
+				D1E14F1821553D920024AF4E /* ContextObserverKeypathTests.swift */,
 				607FACE91AFB9204008FA782 /* Supporting Files */,
 			);
 			path = Tests;
@@ -334,7 +337,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D1E14F132152C2600024AF4E /* ContextObserverTests.swift in Sources */,
+				D1E14F1921553D920024AF4E /* ContextObserverKeypathTests.swift in Sources */,
+				D1E14F132152C2600024AF4E /* ContextObserverObjectTests.swift in Sources */,
 				D1E14F152152C4DB0024AF4E /* TestDB.xcdatamodeld in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

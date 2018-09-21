@@ -1,5 +1,5 @@
 //
-//  ContextObserverTests.swift
+//  ContextObserverObjectTests.swift
 //  ContextObserver_Tests
 //
 //  Created by Peter Gulyas on 2018-09-19.
@@ -10,7 +10,7 @@ import XCTest
 import CoreData
 import ContextObserver
 
-class ContextObserverTests: XCTestCase {
+class ContextObserverObjectTests: XCTestCase {
     private var container: NSPersistentContainer!
     override func setUp() {
         super.setUp()

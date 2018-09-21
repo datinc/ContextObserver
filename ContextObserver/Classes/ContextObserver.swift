@@ -11,9 +11,8 @@ import CoreData
 public class ContextObserver: NSObject {
     
     let context: NSManagedObjectContext
-    private var actions = [NSManagedObjectID: [Action]]()
-    
-    public typealias CallBackBlock = ((observer: NSObject, object: NSManagedObject, changes: [String: Changed], state: State)) -> ()
+    private var objectActions = [NSManagedObjectID: [ObjectAction]]()
+    private var keypathActions = [NSManagedObjectID: [KeyPathAction]]()
     
     public struct State: OptionSet {
         public let rawValue: Int
@@ -31,12 +30,83 @@ public class ContextObserver: NSObject {
         public let new: Any?
     }
     
-    private class Action {
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+        
+        if keypathActions.count > 0 {
+            keypathActions.values.forEach {
+                for action in $0 {
+                    action.object.removeObserver(self, forKeyPath: action.keyPath, context: &(ContextObserver.keypathObserverContext))
+                }
+            }
+        }
+    }
+    
+    public init(context: NSManagedObjectContext) {
+        self.context = context
+        super.init()
+        NotificationCenter.default.addObserver(self, selector: #selector(handleContextObjectDidChange(_:)), name: NSNotification.Name.NSManagedObjectContextObjectsDidChange, object: nil)
+    }
+    
+    private func cleanupActions() {
+        objectActions.keys.forEach {
+            remove(objectAction: nil, for: $0)
+        }
+        keypathActions.keys.forEach {
+            remove(keyPathAction: nil, for: $0)
+        }
+    }
+    
+    private func valueFor(_ value: Any?) -> Any?{
+        if let child = value as? NSManagedObject {
+            return child.objectID
+        } else if let childSet = value as? Set<NSManagedObject> {
+            return Set<NSManagedObjectID>((childSet.map { $0.objectID }))
+        } else if value is NSNull{
+            return nil
+        } else {
+            return value
+        }
+    }
+    
+    public func remove(_ observer: NSObject) {
+        for id in objectActions.keys {
+            remove(observer, for: id)
+        }
+    }
+    
+    private func remove(_ observer: NSObject, for id: NSManagedObjectID) {
+        remove(objectAction: observer, for: id)
+        remove(keyPathAction: nil, for: id)
+    }
+    
+    public func remove(_ observer: NSObject, for object: NSManagedObject?) {
+        if let id = object?.objectID {
+            remove(observer, for: id)
+        } else {
+            remove(observer)
+        }
+    }
+    
+    public override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
+        guard let context = context else { return }
+        if context == &ContextObserver.keypathObserverContext {
+            handleKeypathObserveValue(forKeyPath: keyPath, of: object, change: change)
+        }
+    }
+}
+// MARK: - Object Observation
+
+extension ContextObserver {
+    
+    public typealias ObjectCallbackBlock = ((observer: NSObject, object: NSManagedObject, changes: [String: Changed], state: State)) -> ()
+    
+    private class ObjectAction {
         weak var observer: NSObject?
         let id: NSManagedObjectID
         let state: State
-        let block: CallBackBlock
-        init(_ observer: NSObject, _ id: NSManagedObjectID, _ state: State, _ block: @escaping CallBackBlock) {
+        let block: ObjectCallbackBlock
+        init(_ observer: NSObject, _ id: NSManagedObjectID, _ state: State, _ block: @escaping ObjectCallbackBlock) {
             self.observer = observer
             self.id = id
             self.state = state
@@ -44,14 +114,51 @@ public class ContextObserver: NSObject {
         }
     }
     
-    deinit {
-        NotificationCenter.default.removeObserver(self)
+    private func changesFor(object: NSManagedObject) -> [String: Changed] {
+        
+        var changes = [String: Changed]()
+        
+        for item in object.changedValues() {
+            let new = valueFor(item.value)
+            let old = valueFor(object.changedValuesForCurrentEvent()[item.key])
+            let change = Changed(old: old, new: new)
+            changes[item.key] = change
+        }
+        
+        return changes
     }
     
-    public init(context: NSManagedObjectContext) {
-        self.context = context
-        super.init()
-        NotificationCenter.default.addObserver(self, selector: #selector(handleContextObjectDidChange(_:)), name: NSNotification.Name.NSManagedObjectContextObjectsDidChange, object: nil)
+    public func add(observer: NSObject, for id: NSManagedObjectID, state: State = .all, _ block: @escaping ObjectCallbackBlock) {
+        let action = ObjectAction(observer, id, state, block)
+        var list = objectActions[id] ?? []
+        list.append(action)
+        objectActions[id] = list
+    }
+    
+    public func add<O: NSObject, T: NSManagedObject>(_ type: T.Type, observer: O, for id: NSManagedObjectID, state: State = .all, _ block: @escaping ((observer: O, object: T, changes: [String: Changed], state: State)) -> ()) {
+        return add(observer: observer, for: id, state: state) { result in
+            let object = result.object as! T
+            let observer = result.observer as! O
+            block((observer, object, result.changes, result.state))
+        }
+    }
+    
+    public func add<O: NSObject, T: NSManagedObject>(observer: O, for object: T, state: State = .all, _ block: @escaping ((observer: O, object: T, changes: [String: Changed], state: State)) -> ()) {
+        return add(observer: observer, for: object.objectID, state: state) { result in
+            let object = result.object as! T
+            let observer = result.observer as! O
+            block((observer, object, result.changes, result.state))
+        }
+    }
+    
+    private func remove(objectAction observer: NSObject?, for id: NSManagedObjectID) {
+        guard let actions = objectActions[id] else { return }
+        let result = actions.filter { $0.observer != observer }
+        if result.count > 0 {
+            self.objectActions[id] = result
+        } else {
+            self.objectActions.removeValue(forKey: id)
+        }
     }
     
     @objc private func handleContextObjectDidChange(_ notification: Notification) {
@@ -69,8 +176,8 @@ public class ContextObserver: NSObject {
         
         let allObjects = insertedObjectsSet.union(updatedObjectsSet).union(deletedObjectsSet).union(refreshedObjectsSet)
         
-        let filterd: [(object: NSManagedObject, actions: [Action])] = allObjects.compactMap {
-            guard let action = actions[$0.objectID] else { return nil }
+        let filterd: [(object: NSManagedObject, actions: [ObjectAction])] = allObjects.compactMap {
+            guard let action = objectActions[$0.objectID] else { return nil }
             return ($0, action)
         }
         var updates = [(state: State, id: NSManagedObjectID, changes: [String: Changed])]()
@@ -95,10 +202,12 @@ public class ContextObserver: NSObject {
         
         context.perform { [weak self] in
             guard let this = self else { return }
+            this.handleKeypathContextChange(notification, updatedObjectsSet)
+            
             var shouldCleanUp = false
             
             for update in updates {
-                guard let actions = this.actions[update.id] else { continue }
+                guard let actions = this.objectActions[update.id] else { continue }
                 let object = this.context.object(with: update.id)
                 this.context.refresh(object, mergeChanges: true)
                 
@@ -116,99 +225,95 @@ public class ContextObserver: NSObject {
             }
         }
     }
+}
+
+// MARK: - KeyPath Observation
+
+extension ContextObserver {
     
-    private func cleanupActions() {
-        for id in actions.keys {
-            guard let items = actions[id] else { continue }
-            guard items.count > 0 else {
-                print("Cleaned up \(id)")
-                actions.removeValue(forKey: id)
-                continue
+    public typealias KeypathCallbackBlock<T: NSObject, O: NSManagedObject> = ((observer: T, object: O, change: Changed)) -> ()
+    private typealias BasicKeypathCallbackBlock = KeypathCallbackBlock<NSObject, NSManagedObject>
+    
+    private static var keypathObserverContext = "keypathObserverContext"
+    
+    private class KeyPathAction {
+        weak var observer: NSObject?
+        let object: NSManagedObject
+        let keyPath: String
+        let block: BasicKeypathCallbackBlock
+        
+        init(_ observer: NSObject, _ object: NSManagedObject, _ keyPath: String, _ block: @escaping BasicKeypathCallbackBlock) {
+            self.observer = observer
+            self.object = object
+            self.keyPath = keyPath
+            self.block = block
+        }
+    }
+    
+    public func add<O: NSObject, T: NSManagedObject, V>(observer: O, for id: NSManagedObjectID, keyPath: KeyPath<T, V>, _ block: @escaping KeypathCallbackBlock<O, T>) {
+        let keyPathStr = NSExpression(forKeyPath: keyPath).keyPath
+        add(T.self, observer: observer, for: id, keyPath: keyPathStr, block)
+    }
+    public func add<O: NSObject, T: NSManagedObject>(_ type: T.Type, observer: O, for id: NSManagedObjectID, keyPath: String, _ block: @escaping KeypathCallbackBlock<O, T>) {
+        context.performAndWait { [weak self, weak observer] in
+            guard let this = self else { return }
+            let object = this.context.object(with: id) as! T
+            object.addObserver(this, forKeyPath: keyPath, options: [.new, .old], context: &(ContextObserver.keypathObserverContext))
+            let action = KeyPathAction(observer!, object, keyPath) { update in
+                guard let observer = update.observer as? O else { return }
+                guard let object = update.object as? T else { return }
+                block((observer, object, update.change))
             }
             
-            let results = items.filter { $0.observer != nil }
-            if results.count > 0 {
-                if items.count != results.count {
-                    actions[id] = results
-                    print("Cleaned up \(id)")
-                }
+            var list = self?.keypathActions[id] ?? []
+            list.append(action)
+            self?.keypathActions[id] = list
+        }
+    }
+    
+    private func handleKeypathObserveValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?) {
+        guard let id = (object as? NSManagedObject)?.objectID else { return }
+        
+        let new = valueFor(change?[.newKey])
+        let old = valueFor(change?[.oldKey])
+        
+        let change = Changed(old: old, new: new)
+        
+        context.perform { [weak self] in
+            guard let this = self else { return }
+            guard let actions = (this.keypathActions[id]?.filter { $0.keyPath == keyPath}), actions.count > 0 else { return }
+            let object = this.context.object(with: id)
+            this.context.refresh(object, mergeChanges: true)
+            
+            for action in actions {
+                guard let observer = action.observer else { return }
+                action.block((observer, object, change))
+            }
+        }
+    }
+
+    private func remove(keyPathAction observer: NSObject?, for id: NSManagedObjectID) {
+        context.performAndWait { [weak self] in
+            guard let this = self else { return }
+            guard let actions = this.keypathActions[id] else { return }
+            let remove = actions.filter { $0.observer == observer }
+            remove.forEach {
+                $0.object.removeObserver(this, forKeyPath: $0.keyPath, context: &(ContextObserver.keypathObserverContext))
+            }
+            let result = actions.filter { $0.observer != observer }
+            if result.count > 0 {
+                this.keypathActions[id] = result
             } else {
-                actions.removeValue(forKey: id)
-                print("Cleaned up \(id)")
+                this.keypathActions.removeValue(forKey: id)
             }
         }
     }
     
-    private func changesFor(object: NSManagedObject) -> [String: Changed] {
-        
-        var changes = [String: Changed]()
-        
-        func valueFor(_ value: Any?) -> Any?{
-            if let child = value as? NSManagedObject {
-                return child.objectID
-            } else if let childSet = value as? Set<NSManagedObject> {
-                return Set<NSManagedObjectID>((childSet.map { $0.objectID }))
-            } else if value is NSNull{
-                return nil
-            } else {
-                return value
+    private func handleKeypathContextChange(_ notification: Notification, _ updatedObjectsSet: Set<NSManagedObject>) {
+        for actions in keypathActions.values {
+            actions.forEach {
+                $0.object.value(forKeyPath: $0.keyPath) // load keypath to trigger update
             }
-        }
-        
-        for item in object.changedValues() {
-            let new = valueFor(item.value)
-            let old = valueFor(object.changedValuesForCurrentEvent()[item.key])
-            let change = Changed(old: old, new: new)
-            changes[item.key] = change
-        }
-        
-        return changes
-    }
-    
-    public func add(observer: NSObject, for id: NSManagedObjectID, state: State = .all, _ block: @escaping CallBackBlock) {
-        let action = Action(observer, id, state, block)
-        var list = actions[id] ?? []
-        list.append(action)
-        actions[id] = list
-    }
-    
-    public func add<O: NSObject, T: NSManagedObject>(_ type: T.Type, observer: O, for id: NSManagedObjectID, state: State = .all, _ block: @escaping ((observer: O, object: T, changes: [String: Changed], state: State)) -> ()) {
-        return add(observer: observer, for: id, state: state) { result in
-            let object = result.object as! T
-            let observer = result.observer as! O
-            block((observer, object, result.changes, result.state))
-        }
-    }
-    
-    public func add<O: NSObject, T: NSManagedObject>(observer: O, for object: T, state: State = .all, _ block: @escaping ((observer: O, object: T, changes: [String: Changed], state: State)) -> ()) {
-        return add(observer: observer, for: object.objectID, state: state) { result in
-            let object = result.object as! T
-            let observer = result.observer as! O
-            block((observer, object, result.changes, result.state))
-        }
-    }
-    
-    public func remove(_ observer: NSObject) {
-        for id in actions.keys {
-            remove(observer, for: id)
-        }
-    }
-    
-    public func remove(_ observer: NSObject, for id: NSManagedObjectID) {
-        guard let actions = actions[id] else { return }
-        let result = actions.filter { $0.observer != observer }
-        if result.count > 0 {
-            self.actions[id] = result
-        } else {
-            self.actions.removeValue(forKey: id)
-        }
-    }
-    
-    public func remove(_ observer: NSObject, for object: NSManagedObject?) {
-        if let id = object?.objectID {
-            remove(observer, for: id)
-        } else {
-            remove(observer)
         }
     }
 }
