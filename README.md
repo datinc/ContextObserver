@@ -54,7 +54,7 @@ pod 'ContextObserver'
 
 ## Author
 
-datinc, peter@datinc.ca
+datinc
 
 ## License
 
