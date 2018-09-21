@@ -14,6 +14,12 @@ public class ContextObserver: NSObject {
     private var objectActions = [NSManagedObjectID: [ObjectAction]]()
     private var keypathActions = [NSManagedObjectID: [KeyPathAction]]()
     
+    private struct Update {
+        let state: State
+        let id: NSManagedObjectID
+        let changes: [String: Changed]
+    }
+    
     public struct State: OptionSet {
         public let rawValue: Int
         public init(rawValue: Int) { self.rawValue = rawValue }
@@ -92,8 +98,10 @@ public class ContextObserver: NSObject {
     
     public override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
         guard let context = context else { return }
+        guard let id = (object as? NSManagedObject)?.objectID else { return }
+        
         if context == &ContextObserver.keypathObserverContext {
-            handleKeypathObserveValue(forKeyPath: keyPath, of: object, change: change)
+            handleKeypathObserveValue(forKeyPath: keyPath, of: id, change: change)
         }
     }
     
@@ -130,7 +138,7 @@ public class ContextObserver: NSObject {
             guard let action = objectActions[$0.objectID] else { return nil }
             return ($0, action)
         }
-        var updates = [(state: State, id: NSManagedObjectID, changes: [String: Changed])]()
+        var updates = [Update]()
         
         for item in filterd {
             var state: State = []
@@ -147,12 +155,12 @@ public class ContextObserver: NSObject {
                 state.insert(.refreshed)
             }
             let changes = changesFor(object: item.object)
-            updates.append((state, item.object.objectID, changes))
+            updates.append(Update(state: state, id: item.object.objectID, changes: changes))
         }
         
         context.perform { [weak self] in
             guard let this = self else { return }
-            this.handleKeypathContextChange(notification, updatedObjectsSet)
+            this.handleKeypathContextChange(notification)
             this.handleObjectContextChange(notification, updates)
         }
     }
@@ -203,7 +211,7 @@ extension ContextObserver {
         }
     }
     
-    private func handleObjectContextChange(_ notification: Notification, _ updates: [(state: State, id: NSManagedObjectID, changes: [String: Changed])]) {
+    private func handleObjectContextChange(_ notification: Notification, _ updates: [Update]) {
         for update in updates {
             guard let actions = objectActions[update.id] else { continue }
             var cleanup = false
@@ -271,9 +279,7 @@ extension ContextObserver {
         }
     }
     
-    private func handleKeypathObserveValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?) {
-        guard let id = (object as? NSManagedObject)?.objectID else { return }
-        
+    private func handleKeypathObserveValue(forKeyPath keyPath: String?, of id: NSManagedObjectID, change: [NSKeyValueChangeKey : Any]?) {
         let new = valueFor(change?[.newKey])
         let old = valueFor(change?[.oldKey])
         
@@ -316,7 +322,7 @@ extension ContextObserver {
         }
     }
     
-    private func handleKeypathContextChange(_ notification: Notification, _ updatedObjectsSet: Set<NSManagedObject>) {
+    private func handleKeypathContextChange(_ notification: Notification) {
         for actions in keypathActions.values {
             actions.forEach {
                 $0.object.value(forKeyPath: $0.keyPath) // load keypath to trigger update
