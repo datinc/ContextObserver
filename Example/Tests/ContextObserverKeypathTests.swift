@@ -42,6 +42,8 @@ class ContextObserverKeypathTests: XCTestCase {
         }
         
         let exp = expectation(description: "Wait for change")
+        exp.assertForOverFulfill = false
+        
         var change: ContextObserver.ValueChanged<String>?
         
         observer.add(observer: self, for: id, keyPath: \Entity0.stringValue) { (update) in

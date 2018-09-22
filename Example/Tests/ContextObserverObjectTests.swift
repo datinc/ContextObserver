@@ -167,7 +167,7 @@ class ContextObserverObjectTests: XCTestCase {
         let exp = expectation(description: "Wait for change")
         var change: ContextObserver.Changed!
         
-        observer.add(Entity0.self, observer: self, for: id0) { (update) in
+        observer.add(Entity0.self, observer: self, for: id0, state: .updated) { (update) in
             if let found = update.changes["entity1s"] {
                 change = found
                 exp.fulfill()
