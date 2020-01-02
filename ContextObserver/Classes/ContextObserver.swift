@@ -282,7 +282,10 @@ extension ContextObserver {
             var list = this.keypathActions[id] ?? []
             list.append(action)
             this.keypathActions[id] = list
+            
+            block((observer!, object, ValueChanged(old: nil, new: nil)))
         }
+        
     }
     
     private func handleKeypathObserveValue(forKeyPath keyPath: String?, of id: NSManagedObjectID, change: [NSKeyValueChangeKey : Any]?) {
