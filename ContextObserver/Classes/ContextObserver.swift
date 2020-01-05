@@ -170,7 +170,6 @@ public class ContextObserver: NSObject {
             this.handleObjectContextChange(updates)
         }
     }
-    
 }
 // MARK: - Object Observation
 
@@ -222,7 +221,7 @@ extension ContextObserver {
             guard let actions = objectActions[update.id] else { continue }
             var cleanup = false
             let object = context.object(with: update.id)
-            context.refresh(object, mergeChanges: true)
+            //context.refresh(object, mergeChanges: true)
             
             for action in actions where action.state.intersection(update.state).rawValue > 0 {
                 guard let observer = action.observer else {
