@@ -161,7 +161,15 @@ public class ContextObserver: NSObject {
                 state.insert(.refreshed)
             }
             let changes = changesFor(object: object)
-            updates.append(Update(state: state, id: object.objectID, changes: changes))
+            
+            if changes.count != 0 || state != .refreshed {
+                updates.append(Update(state: state, id: object.objectID, changes: changes))
+            }
+        }
+        
+        if updates.count == 0 {
+            // nothing to do.
+            return
         }
         
         context.perform { [weak self] in
