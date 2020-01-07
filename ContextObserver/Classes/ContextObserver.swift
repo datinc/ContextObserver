@@ -139,6 +139,8 @@ public class ContextObserver: NSObject {
         
         let allObjects = insertedObjectsSet.union(updatedObjectsSet).union(deletedObjectsSet).union(refreshedObjectsSet)
    
+        let objectActions = self.objectActions
+        
         let filterd: [NSManagedObject] = allObjects.compactMap {
             guard objectActions[$0.objectID] != nil else { return nil }
             return $0
@@ -199,7 +201,7 @@ extension ContextObserver {
         }
     }
     
-    public func add<O: NSObject, T: NSManagedObject>(_ type: T.Type, observer: O, for id: NSManagedObjectID, state: State = .all, _ block: @escaping ObjectCallbackBlock<O, T>) {
+    public func add<O: NSObject, T: NSManagedObject>(_ type: T.Type, observer: O, for id: NSManagedObjectID, state: State = .updated, _ block: @escaping ObjectCallbackBlock<O, T>) {
         let action = ObjectAction(observer, id, state) { result in
             let object = result.object as! T
             let observer = result.observer as! O
@@ -228,15 +230,20 @@ extension ContextObserver {
         for update in updates {
             guard let actions = objectActions[update.id] else { continue }
             var cleanup = false
-            let object = context.object(with: update.id)
+            var object: NSManagedObject? = nil
             //context.refresh(object, mergeChanges: true)
             
-            for action in actions where action.state.intersection(update.state).rawValue > 0 {
+            for action in actions {
                 guard let observer = action.observer else {
                     cleanup = true
                     continue
                 }
-                action.block((observer, object, update.changes, update.state))
+                if action.state.intersection(update.state).rawValue > 0 {
+                    if object == nil {
+                        object = context.object(with: update.id)
+                    }
+                    action.block((observer, object!, update.changes, update.state))
+                }
             }
             if cleanup {
                 remove(objectAction: nil, for: update.id)
